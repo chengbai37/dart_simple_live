@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # 开启手动运行按钮
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest # 使用 Ubuntu 免费服务器
+    
+    steps:
+      # 1. 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 配置 Java 环境 (Android 编译必需)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. 配置 Flutter 环境
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0' # 适配该项目的版本
+          cache: true
+
+      # 4. 安装项目依赖
+      - name: Install dependencies
+        run: |
+          cd simple_live_app
+          flutter pub get
+
+      # 5. 编译 Release 版本 APK (按 CPU 架构分包，体积更小)
+      - name: Build APK
+        run: |
+          cd simple_live_app
+          flutter build apk --release --split-per-abi
+
+      # 6. 上传生成的 APK 到 GitHub 服务器
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: simple-live-apk
+          path: simple_live_app/build/app/outputs/flutter-apk/*-release.apk
